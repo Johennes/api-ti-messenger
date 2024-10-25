@@ -1,5 +1,5 @@
 # Berechtigungsmanagement
 
 ```json
-{{#include schema/permissionconfig.json}}
+{{#include schema/permissionConfig.json}}
 ```
