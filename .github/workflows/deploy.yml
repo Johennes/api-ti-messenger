@@ -33,6 +33,7 @@ jobs:
         run: |
           cd docs
           mdbook build
+          tree docs
 
       - name: Setup Pages
         id: pages
