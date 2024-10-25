@@ -14,3 +14,7 @@
 - [Primärsystem](./primärsystem.md)
 - [Chatbots](./chatbots.md)
 - [FAQ](faq.md)
+
+---
+
+- [Berechtigungsmanagement](permissionconfig.md)
