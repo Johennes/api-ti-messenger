@@ -1,67 +1,47 @@
-ifdef::env-github[]
-:tip-caption: :bulb:
-:note-caption: :information_source:
-:important-caption: :heavy_exclamation_mark:
-:caution-caption: :fire:
-:warning-caption: :warning:
-endif::[]
+# Zentrale IDP-Dienst
 
-:imagesdir: ../../images
-:toc: macro
-:toclevels: 6
-:toc-title: Table of Contents
-:numbered:
-:sectnumlevels: 6
+## Überblick
 
-image::meta/gematik.png[logo,width=250,height=47,role=right]
-
-toc::[]
-
-= Zentrale IDP-Dienst
-== Überblick
 Der zentrale *IDP-Dienst* der gematik (*[gemSpec_IDP_Dienst]*) ermöglicht die sichere Identifikation der Akteure anhand der ihnen bereitgestellten Identifikationsmittel einer Smartcard (SMC-B / HBA). Hierfür fasst der *IDP-Dienst*, die im AUT-Zertifikat befindlichen Attribute in signierten JSON Web Token (`ID_TOKEN`) zusammen und stellt diese der anfragenden *Relying Party* aus. Im Kontext des *TI-Messenger-Dienstes* übernimmt der *Registrierungs-Dienst* eines *TI-Messenger-Fachdienstes* sowie der *Auth-Service* des *VZD-FHIR-Directory* die Rolle der *Relying Party*, welche einen `ID_TOKEN` beim *IDP-Dienst* anfragt. 
 
 In den folgenden Kapiteln werden die notwendigen Maßnahmen / Abläufe beschrieben, um die in der Spezifikation geforderte Authentifizierung via OpenID Connect durchführen zu können. 
 
-== Registrierung der Relying Party am IDP-Dienst
+## Registrierung der Relying Party am IDP-Dienst
+
 Im Rahmen des *TI-Messenger-Dienstes* ist es notwendig, dass der *TI-Messenger-Anbieter* einer *Relying Party* (*Registrierungs-Dienst*) diesen beim zentralen *IDP-Dienst* der gematik registriert, um von diesem `ID_TOKEN` ausgestellt zu bekommen. Die Registrierung der *Relying Party* erfolgt hierbei als organisatorischer Prozess. Weitere Information können dem im https://fachportal.gematik.de/anwendungen/ti-messenger[Fachportal] bereitgestelltem Welcome Package (Schritt 5) entnommen werden.
 
 Bei der Registrierung der *Relying Party* muss der *TI-Messenger-Anbieter* die Adresse(n) (`redirect_uri`) der gematik mitteilen. Zu der `redirect_uri` wird eine `client_id` für die *Relying Party* registriert. Die `client_id` wird von der gematik vergeben und nach Abschluss der Registrierung dem *TI-Messenger-Anbieter* mitgeteilt.  
  
 In der folgenden Tabelle sind die `scopes` und die `claims`, die im Rahmen des *TI-Messenger-Dienstes* notwendig sind, dargestellt. Der `scope=ti-messenger` beinhaltet die mit dem *IDP-Dienst* abgestimmten `claims` für die Nutzung des *TI-Messenger-Dienstes*.
 
-[options="header"]
-|==============================================================================================================================================================================
-| Scope        | Claims                                     | Beschreibung                                                                                                      
-| `openid`       | `sub` (eindeutiger Benutzer-Identifier), +
-`aud` (Adressat: URI der RP oder Identifier der RP), +
-`iss` (Aussteller: URL des IDP), + 
-`iat` (Ausgabezeit), + 
-`exp` (Ablaufzeit)                   | Erforderliche Claims für den OpenID Connect (OIDC) Flow 
-| `ti-messenger` | `idNummer` (TelematikID), + 
-`ProfessionOID`, + 
-`organizationName`  | Erforderliche Claims für den TI-Messenger-Dienst                                                                  
-|==============================================================================================================================================================================
+
+| Scope        | Claims                                     | Beschreibung |                                                                                                  
+| ------------ | ------------------------------------------ | ------------ |
+| `openid`     | `sub` (eindeutiger Benutzer-Identifier)<br>`aud` (Adressat: URI der RP oder Identifier der RP)<br>`iss` (Aussteller: URL des IDP)<br>`iat` (Ausgabezeit)<br>`exp` (Ablaufzeit) | Erforderliche Claims für den OpenID Connect (OIDC) Flow |
+| `ti-messenger` | `idNummer` (TelematikID)<br>`ProfessionOID`<br>`organizationName` | Erforderliche Claims für den TI-Messenger-Dienst |
 
 Die `claims` werden später in das angeforderte JSON WEB TOKEN (`ID_TOKEN`) eingebettet. 
 
 TIP: Die Registrierung erfolgt einmalig für die Anwendung bzw. den Dienst und muss bei Updates nicht wiederholt werden. 
 
-== Ablauf: Abfrage eines ID_TOKEN am IDP-Dienst
+## Ablauf: Abfrage eines ID_TOKEN am IDP-Dienst
+
 Nach der Registrierung der *Relying Party* beim *IDP-Dienst* sind die folgenden Schritte notwendig, um ein `ID_TOKEN` am *IDP-Dienst* abzufragen. 
 
-=== Aufbau der Authorization Request URL
+### Aufbau der Authorization Request URL
+
 Die `Authorization Request URL` wird von der *Relying Party* generiert, um beim *IDP-Dienst* sich ein `ID_TOKEN` ausstellen zu lassen. Für die Erstellung der `Authorization Request URL` sind die in den folgenden Unterkapitel beschriebenen Abläufe notwendig.
 
-==== Bildung von CODE_VERIFIER und CODE_CHALLENGE
+#### Bildung von CODE_VERIFIER und CODE_CHALLENGE
+
 Der *IDP-Dienst* der gematik unterstützt _PKCE (Proof Key for Code Exchange)_. Daher ist es notwendig, dass die *Relying Party* einen `CODE_VERIFIER` erzeugt und die `CODE_CHALLENGE` mithilfe des Algorithmus der `CODE_CHALLENGE_METHOD` berechnet. Dieser in Kombination mit dem `AUTHORIZATION_CODE` wird später am `/token`-Endpunkt benötigt, um ein `ID_TOKEN` zu erhalten. 
 
-==== Zusammensetzen der Authorization Request URL
+#### Zusammensetzen der Authorization Request URL
+
 Die `Authorization Request URL` setzt sich aus dem im Discovery Dokument ermittelten `{authorization_endpoint}` und Request-Parametern, die gemäß OpenID Connect Standard definiert sind, zusammen.
 
 *Beispiel eines Authorization Request URL:*
-[source,text]
-----
+```
 https://idp-ref.app.ti-dienste.de/auth? 
 client_id=GEMgematAut5zGBeGaqR&
 response_type=code&
@@ -71,32 +51,24 @@ code_challenge=JvcJb54WkEm38N3U1IYQsP2Lqvv4Nx23D2mU7QePWEw&
 code_challenge_method=S256&
 scope=openid ti-messenger&
 nonce=MbwsuHIExDKyqKDKSsPp
-----
+```
 
-[options="header"]
-|=============================================================================================================================================================================================================================================================================================================
-| Attribut              | Beschreibung                                                                                                                                                                                                                                                                        
-| `client_id`             | Die `client_id` der *Relying Party*. Wird bei der Registrierung beim *IDP-Dienst* vergeben.                                                                                                                                                                                                                
-| `response_type`         | Referenziert den erwarteten Response-Type des Flows und
-muss immer `code` lauten.
-Damit wird angezeigt, dass es sich hierbei um einen Authorization Code Flow handelt.
-Für eine nähere Erläuterung siehe OpenID-Spezifikation.                                                         
-| `redirect_uri`          | Die URL wird von der *Relying Party* beim Registrierungsprozess im *IDP-Dienst* hinterlegt und leitet die Antwort des Servers an diese Adresse um.                                                                                                                                                           
-| `state`                 | Der state der Session. Sollte dem zufällig generierten state-Wert aus der initialen Anfrage entsprechen.                                                                                                                                                                            
-| `code_challenge`        | Der Hashwert des `CODE_VERIFIER` wird zum *IDP-Dienst* als `CODE_CHALLENGE` gesendet.                                                                                                                                                                                                           
-| `code_challenge_method` | Die *Relying Party* generiert einen `CODE_VERIFIER` und erzeugt darüber einen Hash im Verfahren SHA-256.                                                                                                                                         
-| `scope`                 | Der `Scope` entspricht dem zwischen der *Relying Party* und dem *IDP-Dienst* festgelegten Wert (Achtung: Nicht zu verwechseln mit dem zusätzlichen scope Parameter des gematik *Authenticator* für den Kartentyp).
 
-Der Scope besteht grundsätzlich aus zwei Parametern: +
-    `openid` +
-    `ti-messenger`
-| `nonce`                 | String zur Verhinderung von CSRF-Attacke.
-Dieser Wert ist optional. Wenn er mitgegeben wird muss der gleiche Wert im abschließend ausgegebenen `ID_TOKEN` wieder auftauchen.                                                                                                         
-|=============================================================================================================================================================================================================================================================================================================
+| Attribut              | Beschreibung |
+| --------------------- | ------------ |                                                                                                 
+| `client_id`             | Die `client_id` der *Relying Party*. Wird bei der Registrierung beim *IDP-Dienst* vergeben. |                                                                                                           
+| `response_type`         | Referenziert den erwarteten Response-Type des Flows und muss immer `code` lauten. Damit wird angezeigt, dass es sich hierbei um einen Authorization Code Flow handelt. Für eine nähere Erläuterung siehe OpenID-Spezifikation. |
+| `redirect_uri`          | Die URL wird von der *Relying Party* beim Registrierungsprozess im *IDP-Dienst* hinterlegt und leitet die Antwort des Servers an diese Adresse um. |
+| `state`                 | Der state der Session. Sollte dem zufällig generierten state-Wert aus der initialen Anfrage entsprechen. |                                                                
+| `code_challenge`        | Der Hashwert des `CODE_VERIFIER` wird zum *IDP-Dienst* als `CODE_CHALLENGE` gesendet. |                        
+| `code_challenge_method` | Die *Relying Party* generiert einen `CODE_VERIFIER` und erzeugt darüber einen Hash im Verfahren SHA-256. |
+| `scope`                 | Der `Scope` entspricht dem zwischen der *Relying Party* und dem *IDP-Dienst* festgelegten Wert (Achtung: Nicht zu verwechseln mit dem zusätzlichen scope Parameter des gematik *Authenticator* für den Kartentyp). Der Scope besteht grundsätzlich aus zwei Parametern: `openid`, `ti-messenger` |
+| `nonce`                 | String zur Verhinderung von CSRF-Attacke. Dieser Wert ist optional. Wenn er mitgegeben wird muss der gleiche Wert im abschließend ausgegebenen `ID_TOKEN` wieder auftauchen. |
 
 Die Anfrage wird dann über den *Authenticator* an den `/auth`-Endpunkt des *IDP-Dienstes* geleitet. Der Authorization-Endpunkt des *IDP-Dienstes*, welcher die Nutzerauthentifizierung durchführt und für die Ausstellung des `AUTHORIZATION_CODE` zuständig ist, liefert den `USER_CONSENT` und das `CHALLENGE_TOKEN` als Antwort auf den Authorization-Request des *Authenticators*.
 
-=== Aufrufe der Endpunkte am IDP-Dienst
+### Aufrufe der Endpunkte am IDP-Dienst
+
 Im Rahmen des *TI-Messenger-Dienstes* werden die folgenden Endpunkte am zentralen *IDP-Dienst* verwendet:
 
 * *Discovery-Endpunkt* +
@@ -113,63 +85,52 @@ PU: https://idp.app.ti-dienste.de/token
 
 In den folgenden Unterkapiteln werden die Endpunkte weiter beschrieben.
 
-==== Discovery-Endpunkt
+#### Discovery-Endpunkt
+
 Das Discovery Dokument ist ein Base64 kodiertes Metadatendokument, das den Großteil der Informationen enthält, die für eine Anwendung zum Durchführen einer Anmeldung erforderlich sind. Hierzu gehören Informationen wie z. B. die zu verwendenden Schnittstellen und der Speicherort der öffentlichen Signaturschlüssel des *IDP-Dienstes*.
 
 CAUTION: Das Discovery Document wird alle 24 Stunden oder nach durchgeführten Änderungen umgehend neu erstellt. Dieses ist mit dem `PrK_DISC_SIG` des *IDP-Dienstes* signiert.
 
-===== Aufbau des Discovery Dokumentes
+#### Aufbau des Discovery Dokumentes
+
 Die folgende Tabelle enthält die Attribute und deren Beschreibung des Discovery Dokumentes, die im Kontext des *TI-Messenger-Dienstes* benötigt werden.
 
-[options="header"]
-|==================================================================================================================================================================================================================================
-| Wert                                    | Beschreibung                                   
-| `issuer`                                | `{IDP_URL}` +
-URL des *IDP-Dienstes*
-| `jwks_uri`                              | `{IDP_URL}/certs` +
-URL für den Abruf der Zertifikate
-| `uri_disc`                              | `{IDP_URL}/.well-known/openid-configuration` +
-URL, unter welcher das Discovery Document bereitgestellt wird                                                                                                                          
-| `authorization_endpoint`                | `{IDP_URL}/auth` +
-URL des Authorization-Endpunktes                                              
+| Wert                                    | Beschreibung |
+| --------------------------------------- | ------------ |
+| `issuer`                                | `{IDP_URL}` URL des *IDP-Dienstes* |
+| `jwks_uri`                              | `{IDP_URL}/certs` URL für den Abruf der Zertifikate |
+| `uri_disc`                              | `{IDP_URL}/.well-known/openid-configuration` URL, unter welcher das Discovery Document bereitgestellt wird |                                     
+| `authorization_endpoint`                | `{IDP_URL}/auth` URL des Authorization-Endpunktes |
+| `token_endpoint`                        | `{IDP_URL}/token` URL des Token-Endpunktes |
+| `uri_puk_idp_enc`                       | `{IDP_URL}/certs/uri_puk_idp_enc` URL für den öffentlichen Schlüssel zur Verschlüsselung |
+|`uri_puk_idp_sig`                        | `{IDP_URL}/certs/uri_puk_idp_sig` URL für den öffentlichen Schlüssel zur Signaturprüfung |
 
-| `token_endpoint`                        | `{IDP_URL}/token` +
-URL des Token-Endpunktes                                                                         
+##### Schlüsselmaterial des IDP-Dienstes
 
-| `uri_puk_idp_enc`                       | `{IDP_URL}/certs/uri_puk_idp_enc` +
-URL für den öffentlichen Schlüssel zur Verschlüsselung
-
-|`uri_puk_idp_sig`                        | `{IDP_URL}/certs/uri_puk_idp_sig` +
-URL für den öffentlichen Schlüssel zur Signaturprüfung                                                                       
-|==================================================================================================================================================================================================================================
-
-===== Schlüsselmaterial des IDP-Dienstes
 Die folgende Tabelle enthält die Abkürzungen für die öffentlichen Schlüssel des *IDP-Dienstes* und deren Verwendung.
 
-[options="header"]
-|========================================================================================================================================================================
-| Schlüssel    | Beschreibung        
-
-| `PuK_DISC_SIG` | Wird für die Signaturprüfung des Discovery Document benötigt.  
-
-| `PuK_IDP_SIG`  | Wird für die Signaturprüfung des `CHALLENGE_TOKEN`, des `AUTHORIZATION_CODE` und des `ID_TOKEN` benötigt. 
-
-| `PuK_IDP_ENC`  | Wird für die Verschlüsselung der signierten Challenge durch das *Authenticator* und für die Verschlüsselung des `KEY_VERIFIER` durch die *Relying Party* benötigt.
-|========================================================================================================================================================================
+| Schlüssel    | Beschreibung |      
+| ------------ | ------------ |
+| `PuK_DISC_SIG` | Wird für die Signaturprüfung des Discovery Document benötigt. |
+| `PuK_IDP_SIG`  | Wird für die Signaturprüfung des `CHALLENGE_TOKEN`, des `AUTHORIZATION_CODE` und des `ID_TOKEN` benötigt. |
+| `PuK_IDP_ENC`  | Wird für die Verschlüsselung der signierten Challenge durch das *Authenticator* und für die Verschlüsselung des `KEY_VERIFIER` durch die *Relying Party* benötigt. |
 
 TIP: In der oben gezeigten Tabelle sind nur die vom Hersteller eines *TI-Messenger-Clients* / *TI-Messenger-Fachdienstes* zu verwendenen Schlüssel gelistet.
 
-CAUTION: Aktuell verwenden alle aufgeführten Schlüssel den Algorithmus BP256R1
+```admonish caution
+Aktuell verwenden alle aufgeführten Schlüssel den Algorithmus BP256R1
+```
 
-==== Authorization-Endpunkt
+#### Authorization-Endpunkt
+
 Der Authorization-Endpunkt stellt einen `AUTHORIZATION_CODE` aus, welcher später am `/token`-Endpunkt des *IDP-Dienstes* gegen ein `ID_TOKEN` eingetauscht werden kann. Für die Ausstellung des `AUTHORIZATION_CODE` sind die in den folgenden Unterkapiteln beschriebenen Abläufe notwendig.
 
-===== Ausstellung des CHALLENGE_TOKEN und USER_CONSENT
+##### Ausstellung des CHALLENGE_TOKEN und USER_CONSENT
+
 Der Authorization-Endpunkt erzeugt eine Authentication Challenge (`CHALLENGE_TOKEN`) und einen `USER_CONSENT` anhand der in der `Authorization Request URL` mitgelieferten Daten (`code_challenge` und `scope`). Hierfür prüft der *IDP-Dienst* die bei der organisatorischen Registrierung der Anwendung hinterlegte `redirect_uri` der *Relying Party* mit der `redirect_uri` aus der `Authorization Request URL`. Stimmen diese nicht überein, wird die weitere Verarbeitung mit einem Fehler abgebrochen. Darüberhinaus prüft der *IDP-Dienst* ob die in der `Authorization Request URL` enthaltene `client_id` und `scope` bekannt und in dieser Kombination zulässig sind. Bei Erfolg wird das `CHALLENGE_TOKEN` an den Authenticator zur Signierung sowie der `USER_CONSENT` übermittelt. 
 
 *Beispiel eines CHALLENGE_TOKEN (Encoded):*
-[source,json]
-----
+```json
 {
   "alg": "BP256R1",
   "kid": "puk_idp_sig",
@@ -190,11 +151,10 @@ Der Authorization-Endpunkt erzeugt eine Authentication Challenge (`CHALLENGE_TOK
   "client_id": "GEMgematTIM4HkPrd8SR",
   "state": "4kBZ4hEt1PHdLqeSh8o56w"
 }
-----
+```
 
 *Beispiel eines USER_CONSENT:*
-[source,json]
-----
+```json
 "user_consent":
 {
 	"requested_scopes":
@@ -209,24 +169,25 @@ Der Authorization-Endpunkt erzeugt eine Authentication Challenge (`CHALLENGE_TOK
         "organizationName":"Zustimmung zur Verarbeitung der Organisationszugehörigkeit"
 	}
 }
-----
+```
 
 TIP: Die im `USER_CONSENT` enthaltenen requested_claims `idNummer`,`professionOID` und `organizationName` sind die Claims, die bei der Registrierung (siehe Kapitel "Registrierung") der *Relying Party* am *IDP-Dienst* (für den `scope=ti-messenger`) festgelegt wurden. 
 
-===== Abfrage des USER_CONSENT und Signierung des CHALLENGE_TOKEN
+##### Abfrage des USER_CONSENT und Signierung des CHALLENGE_TOKEN
+
 Auf der Nutzerseite wird das vom *IDP-Dienst* ausgestellte `CHALLENGE_TOKEN` unter Verwendung des `C.HCI.AUT`(SMC-B) oder `C.HP.AUT`(HBA)-Zertifikates am Konnektor signiert und das Authentifizierungszertifikat der verwendeten Smartcard als `x5c`-Parameter eingebettet. 
 
 CAUTION: Damit die Signatur durch den Konnektor erfolgen darf, ist die zuvor eingeholte Zustimmung des Akteurs zur Verwendung der angefragten Daten (`USER_CONSENT`) unbedingt notwendig. 
 
 Anschließend wird das `CHALLENGE_TOKEN` unter Verwendung des öffentlichen Schlüssels `PuK_IDP_ENC` des *IDP-Dienstes* verschlüsselt. Nach der erfolgreichen Verschlüsselung wird das signierte `CHALLENGE_TOKEN` mit dem mitgelieferten Zertifikat der Smartcard (`C.HCI.AUT` oder `C.HP.AUT`) an den Authorization-Endpunkt übermittelt. 
 
-===== Ausstellung des Authorization Codes
+##### Ausstellung des Authorization Codes
+
 Der *IDP-Dienst* entschlüsselt unter Verwendung seines privaten `Prk_IDP_ENC`-Schlüssels das übertragene `CHALLENGE_TOKEN`. Anschließend 
 prüft der *IDP-Dienst* die Signatur des `CHALLENGE_TOKEN` und das mitgelieferte Zertifikat der Smartcard mittels OCSP/TSL der PKI der Telematikinfrastruktur. Sind alle im `claim` geforderten Attribute vorhanden und die Gültigkeit der Attribute geprüft, erstellt der Authorization-Endpunkt einen `AUTHORIZATION_CODE` signiert diesen mit dem Schlüssel `Prk_IDP_SIG` und verschlüsselt diesen mit eigenem Schlüsselmaterial(`AUTH_CODE_ENC`). Anschließend wird der `AUTHORIZATION_CODE` und die vom Client aufzurufende `redirect_url` von der *Reyling Party* an den Authenticator des anfragenden Clients übermittelt. 
 
 *Beispiel Authorization Code (Decrypted):*
-[source,json]
-----
+```json
 {
    "alg": "BP256R1",
    "typ": "JWT",
@@ -251,29 +212,33 @@ prüft der *IDP-Dienst* die Signatur des `CHALLENGE_TOKEN` und das mitgelieferte
    "iat": "1618243993",
    "code_challenge": "r3NZAB5NIdI9aLxeMjfh57axkr5xdMiZjmNc9mPp-Sw",
    "jti": "bcc44257-4a7d-4e0d-8c60-cca2acfda059"
-}     
-----
+}
+```
 
-==== Token-Endpunkt
+#### Token-Endpunkt
+
 Der Token-Endpunkt stellt unter Vorlage eines gültigen `AUTHORIZATION_CODE` einen `ID_TOKEN` aus. Für die Ausstellung des `ID_TOKEN` sind die in den folgenden Unterkapiteln beschriebenen Abläufe notwendig.
 
-CAUTION: Im folgenden wird davon ausgegangen, dass die `redirect_url` der *Reyling Party* aufrufen wurde.
+```admonish caution
+Im folgenden wird davon ausgegangen, dass die `redirect_url` der *Reyling Party* aufrufen wurde.
+```
 
-===== Erzeugung des KEY_VERIFIER durch die Relying Party
+##### Erzeugung des KEY_VERIFIER durch die Relying Party
+
 Im ersten Schritt erzeugt die *Relying Party* einen zufälligen 256-Bit AES-Schlüssel (`Token-Key`). Anschließend erzeugt die *Relying Party* einen `KEY_VERIFIER` indem `Token-Key` und `CODE_VERIFIER` in einem JSON-Objekt kodiert werden und sendet diesen verschlüsselt unter Nutzung des öffentlichen Schlüssels `PUK_IDP_ENC` zusammen mit dem `AUTHORIZATION_CODE` zum Token-Endpunkt des *IDP-Dienstes*.
 
 *Beispiel eines KEY_VERIFIER:*
-[source,json]
-----
+```json
 {
    "token_key": "T0hHOHNKOTFaREcxTmN0dVRKSURraTZxNEpheGxaUEs",
    "code_verifier": "W91A37hQ8oeDRVpnkYgpYthjl4LqYy95A87ISy9zpUM"
 }
-----
+```
 
 TIP: Der im `KEY_VERIFIER` enthaltene `CODE_VERIFIER` ist der ursprünglich von der *Relying Party* erzeugte `CODE_VERIFIER` ohne Hashing des S256-Algorithmus im Gegensatz zur `CODE_CHALLENGE`. 
 
-===== Ausstellung des ID_TOKEN 
+##### Ausstellung des ID_TOKEN 
+
 Am *IDP-Dienst* wird der `AUTHORIZATION_CODE` mit dem zuvor im Kapitel Authorization-Endpunkt beschriebenen erzeugten eigenem Schlüsselmaterial(`AUTH_CODE_ENC`) entschlüsselt. Anschließend prüft der *IDP-Dienst* die Signatur des `AUTHORIZATION_CODE` unter Verwendung des Schlüssels `PuK_IDP_SIG`. Als nächstes extrahiert der *IDP-Dienst* den `CODE_VERIFIER` aus dem mittels `Prk_IDP_ENC` entschlüsselten `KEY_VERIFIER` und prüft diesen gegen die `CODE_CHALLENGE`. Das bedeutet, dass der eingereichte `CODE_VERIFIER` bei Nutzung des Hash-Verfahrens S256 zum bitgleichen Hash-Wert (der `CODE_CHALLENGE``) führt. Stimmt der Hash-Wert aus dem initialen Aufruf des Authenticator - die `CODE_CHALLENGE` - mit dem gebildeten Hash-Wert überein, ist sichergestellt, dass dieser und der initiale Aufruf von der *Relying Party* initiiert wurden. 
 
 Daraufhin extrahiert der *IDP-Dienst* die aus dem eingereichten Authentifizierungszertifikat der Smartcard (AUT-Zertifikat) enthaltenen Attribute in ein JSON WEB TOKEN (`ID_TOKEN`). Um die Integrität des `ID_TOKENS` sicherzustellen und eine eineindeutige Erklärung über die Herkunft des Tokens abzugeben, wird dies mit dem privaten Schlüssel `PrK_IDP_SIG` signiert. Abschließend verschlüsselt der *IDP-Dienst* das `ID_TOKEN` mit dem von der *Relying Party* übermittelten `Token_Key` und sendet dieses verschlüsselt an die *Relying Party* zurück. 
@@ -281,8 +246,7 @@ Daraufhin extrahiert der *IDP-Dienst* die aus dem eingereichten Authentifizierun
 TIP: Der Token-Endpunkt DARF `ID_TOKEN` mit einer Gültigkeitsdauer von mehr als 24 Stunden NICHT ausstellen.
 
 *Beispiel des ID_TOKEN:*
-[source,json]
-----
+```
 {
    "alg": "BP256R1",
    "typ": "JWT",
@@ -309,16 +273,20 @@ TIP: Der Token-Endpunkt DARF `ID_TOKEN` mit einer Gültigkeitsdauer von mehr als
    "iat": "1618243994",
    "jti": "c1c760ca67fe1306"
 }
-----
+```
 
-===== Prüfung des ID_TOKEN von der Relying Party
+##### Prüfung des ID_TOKEN von der Relying Party
+
 Im ersten Schritt entschlüsselt die *Relying Party* das `ID_TOKEN` mit seinem selbst erzeugten 256-Bit AES-Schlüssel (`Token-Key`). Anschließend erfolgt die Signaturprüfung mit dem `PuK_IDP_SIG` des *IDP-Dienstes*. 
 
-== Authorization Code Flow
+## Authorization Code Flow
+
 In dem folgenden Sequenzdiagramm ist beispielhaft der Ablauf des Authorization Code Flow beim Authentisieren einer Organisation am TI-Messenger-Dienst dargestellt. Im Kontext des *TI-Messenger-Dienstes* ist der *Registrierungs-Diens* die *Relying Party*. Als *Authenticator* wird der von der gematik bereitgestellte *Authenticator* verwendet.
 
-CAUTION: Der von der gematik bereitgestellte Authenticator wird nicht in Verbindung mit einer Web-Anwendung empfohlen, da vom Authenticator ein neuer Browser Tab geöffnet wird. Entsprechend der Fachanwendung wird im Browser eine HTML-Seite oder ein Json-Objekt(VZD-FHIR Response) angezeigt.
+```admonish caution
+Der von der gematik bereitgestellte Authenticator wird nicht in Verbindung mit einer Web-Anwendung empfohlen, da vom Authenticator ein neuer Browser Tab geöffnet wird. Entsprechend der Fachanwendung wird im Browser eine HTML-Seite oder ein Json-Objekt(VZD-FHIR Response) angezeigt.
+```
 
 Die Abbildung zeigt die Verwendung des *Authenticators* mit der Auto-Redirect Funktion (`callback=DIRECT`) bei der die `redirect_uri` direkt vom Authenticator aufgerufen wird und der Browserclient über Polling beim Fachdienst den Status des Austausches des Tokens abfragt. Details zur Interaktion mit dem *Authenticator* sind in Kapitel _Interaktion mit der Fachanwendung_ beschrieben. Alternativ könnte der *Authenticator* beim Aufruf der `redirect_uri` eine nutzerfreundliche Webseite der *Relying Party* in einem neuen Browsertab öffnen.    
 
-image::generated/Other/idp.svg[width="100%"]
+![](images/generated/Other/idp.png)

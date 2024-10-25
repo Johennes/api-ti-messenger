@@ -1,40 +1,26 @@
-ifdef::env-github[]
-:tip-caption: :bulb:
-:note-caption: :information_source:
-:important-caption: :heavy_exclamation_mark:
-:caution-caption: :fire:
-:warning-caption: :warning:
-endif::[]
+# Messenger-Service
 
-:imagesdir: ../../images
-:toc: macro
-:toclevels: 5
-:toc-title: Inhaltsverzeichnis
-:numbered:
-:sectnumlevels: 5
+Die folgende Seite gibt einen kurzen Überblick über die Funktionalitäten und Komponeten des *Messenger-Service* und beschreibt die Unterschiede des *Messenger-Service* für die unterschiedlichen Produktausprägungen des *TI-Messengers*. Details sind den Spezifikationen auf den [gemspec Pages](https://gemspec.gematik.de/) der gematik zu entnehmen.  
 
-image::meta/gematik.png[logo,width=250,height=47,role=right]
+## Überblick
 
-toc::[]
+Der *Messenger-Service* ist eine Teilkomponente des *TI-M Fachdienstes* und wird für Organisationen des Gesundheitswesens (z. B. Arztpraxis, Krankenhaus, Krankenkasse, Apotheke, Verband, Kostenträger etc.) bereitgestellt. Der *Messenger-Service* besteht aus einem *Matrix-Homeserver* (basierend auf dem Matrix-Protokoll) und einem *Messenger-Proxy*. Dieser stellt sicher, dass eine Kommunikation mit anderen Messenger-Services, als Teil des *TI-M Dienstes*, nur innerhalb der gemeinsamen *TI-Föderation* erfolgt. Der *Matrix-Homeserver* basiert auf dem offenen Kommunikationsprotokoll [Matrix](https://spec.matrix.org/). Welche Schnittstellen der *Messenger-Service* nutzt und anbietet ist in der folgenden Abbildung dargestellt:
 
-= Messenger-Service
-Die folgende Seite gibt einen kurzen Überblick über die Funktionalitäten und Komponeten des *Messenger-Service* und beschreibt die Unterschiede des *Messenger-Service* für die unterschiedlichen Produktausprägungen des *TI-Messengers*. Details sind den Spezifikationen auf den link:https://gemspec.gematik.de/[gemspec Pages] der gematik zu entnehmen.  
+![](images/generated/TI-M_Basis/API-Messenger-Service.png)
 
-== Überblick
-Der *Messenger-Service* ist eine Teilkomponente des *TI-M Fachdienstes* und wird für Organisationen des Gesundheitswesens (z. B. Arztpraxis, Krankenhaus, Krankenkasse, Apotheke, Verband, Kostenträger etc.) bereitgestellt. Der *Messenger-Service* besteht aus einem *Matrix-Homeserver* (basierend auf dem Matrix-Protokoll) und einem *Messenger-Proxy*. Dieser stellt sicher, dass eine Kommunikation mit anderen Messenger-Services, als Teil des *TI-M Dienstes*, nur innerhalb der gemeinsamen *TI-Föderation* erfolgt. Der *Matrix-Homeserver* basiert auf dem offenen Kommunikationsprotokoll link:https://spec.matrix.org/[Matrix]. Welche Schnittstellen der *Messenger-Service* nutzt und anbietet ist in der folgenden Abbildung dargestellt:
+#### Authentifizierungsverfahren
 
-image::generated/TI-M_Basis/API-Messenger-Service.svg[align="center",width="55%"]
-
-==== Authentifizierungsverfahren
 *Messenger-Services* können den Akteuren unterschiedliche Authentifizierungsverfahren anbieten. Dabei können diverse Authentifizierungsmechanismen durch eine Organisation für Ihre Akteure bereitgestellt werden. Die Organisation und der von ihr gewählte *TI-Messenger-Anbieter* vereinbaren das zur Anwendung kommende Authentifizierungsverfahren bilateral und stimmen sich über die technische Realisierung der dafür notwendigen Anbindung ab.
 
-== Messenger-Proxy
+## Messenger-Proxy
+
 Der *Messenger-Proxy* agiert neben der Funktion als Proxy zur Weiterleitung aller Server-Server-API- und Client-Server-API-Aufrufe an den *Matrix-Homeserver* als Kontrollinstanz zur Prüfung der für die Kommunikation notwendigen Rechte. Hierfür muss der *Messenger-Proxy* für alle Server-Server- und Client-Server-API-Endpunkte genutzt werden und ist für die Regelung der gemäß Matrix Client-Server-API und Matrix-Server-Server-API geltenden Aufrufe zuständig.
 
-==== Client-Server Prüfungen
+#### Client-Server Prüfungen
+
 Der *Messenger-Proxy* als Prüfinstanz aller eingehenden, sowie ausgehenden Anfragen zum *Matrix-Homeserver* ist für die Regelung der gemäß Matrix-Client-Server-API und Matrix-Server-Server-API geltenden Aufrufe zuständig. Daher ist es erforderlich, dass der *Messenger-Proxy* für jeden *Messenger-Service* als Forward- sowie Reverse-Proxy bereitgestellt wird. Die folgende Abbildung verdeutlicht die beide gerade skizzierten Funktionsweisen. 
 
-image::generated/TI-M_Basis/Pruefungen_Messenger_Proxy.svg[width="100%"]
+![](images/generated/TI-M_Basis/Pruefungen_Messenger_Proxy.png)
 
 Bei Aufruf der Client-Server-API durch einen *TI-Messenger-Client* aus dem Internet fungiert der *Messenger-Proxy* als Reverse-Proxy. Beim Aufruf der Server-Server-API im Rahmen einer Server-To-Server Kommunikation fungiert der *Messenger-Proxy* als Forward-, sowie als Reverse-Proxy.
 
@@ -43,7 +29,8 @@ Die folgenden Prüfungen sind durch den *Messenger-Proxy* durchzuführen:
 - Bei jedem `Invite-Event` muss der *Messenger-Proxy* prüfen, ob die in der Anfrage enthaltenen Matrix-Domains zur *TI-Föderation* gehören.
 - Der *Messenger-Proxy* muss bei eingehender Kommunikation auf die Medien-Endpunkte die Pfadkomponente {serverName} auf Föderationszugehörigkeit prüfen
 
-==== Server-Server Prüfungen
+#### Server-Server Prüfungen
+
 In der Funktion als Server-Server Proxy prüft der Messenger-Proxy alle ausgehenden sowie eingehenden Events. Damit fungiert der Server-Server Proxy sowohl als Forward als auch als Reverse-Proxy. 
 Die folgenden Prüfungen sind durch den *Messenger-Proxy* durchzuführen:
 - Bei jedem Event muss der *Messenger-Proxy* die Föderationszugehörigkeit der im Event enthaltenen Matrix-Domains prüfen.
@@ -52,31 +39,41 @@ Die folgenden Prüfungen sind durch den *Messenger-Proxy* durchzuführen:
 - Der *Messenger-Proxy* muss bei ausgehender Kommunikation zum Endpunkt `/.well-known/matrix/server` den im Host-Header enthaltenen Servernamen auf Föderationszugehörigkeit prüfen.
 - Der *Messenger-Proxy* muss bei ausgehender Kommunikation auf die Medien-Endpunkte die Pfadkomponente {serverName} auf Föderationszugehörigkeit prüfen
 
-=== HTTPS-Forwarding
+### HTTPS-Forwarding
+
 Die Kommunikation des *Matrix-Homeservers* in das Internet muss immer über den eigenen *Messenger-Proxy* (in der Funktion als Forward-Proxy) erfolgen.
 
-==== Ausnahmeregeln definieren
-Für bestimmte Funktionalitäten ist es notwendig, dass Anfragen nicht durch die Berechtigungsprüfung des *Messenger-Proxys* abgelehnt werden. So muss eine Anfrage des *VZD-FHIR-Directory* an die link:https://spec.matrix.org/v1.11/server-server-api/#getwell-knownmatrixserver[.well-known] Datei erlaubt sein, um einen eigenen Port für Anfragen des *VZD-FHIR-Directoy* zu hinterlegen, um später über diesen Port den `/_matrix/federation/v1/openid/userinfo`-Endpunkt aufzurufen. Hierzu muss der *Messenger-Proxy* ebenfalls den Zugriff erlauben, damit das *VZD-FHIR-Directory* einen `Matrix-OpenID-Token` prüfen lassen kann.
+#### Ausnahmeregeln definieren
 
-==== Abruf und Signaturprüfung der Föderationsliste
+Für bestimmte Funktionalitäten ist es notwendig, dass Anfragen nicht durch die Berechtigungsprüfung des *Messenger-Proxys* abgelehnt werden. So muss eine Anfrage des *VZD-FHIR-Directory* an die [.well-known](https://spec.matrix.org/v1.11/server-server-api/#getwell-knownmatrixserver) Datei erlaubt sein, um einen eigenen Port für Anfragen des *VZD-FHIR-Directoy* zu hinterlegen, um später über diesen Port den `/_matrix/federation/v1/openid/userinfo`-Endpunkt aufzurufen. Hierzu muss der *Messenger-Proxy* ebenfalls den Zugriff erlauben, damit das *VZD-FHIR-Directory* einen `Matrix-OpenID-Token` prüfen lassen kann.
+
+#### Abruf und Signaturprüfung der Föderationsliste
+
 Eine aktuelle Version der Föderationsliste wird vom *Messenger-Proxy* über die Schnittstelle `I_internVerification` abgerufen. Der Abruf erfolgt entweder zyklisch über ein vom Anbieter definiertes Intervall oder im Rahmen der Föderationsprüfung, wenn eine Domain in der aktuell vorliegenden Liste nicht enthalten ist.
 Der *Messenger-Proxy* muss sicherstellen, dass die vom *Registrierungs-Dienst* bereitgestellte Föderationsliste valide ist. Hierzu muss der *Messenger-Proxy* die Signatur der Föderationsliste unter Verwendung des mitgelieferten Signaturzertifikates (`x5c`-Header) überprüfen.
 
-==== logische Mandantentrennung
+#### logische Mandantentrennung
+
 Werden durch einen Anbieter eines *TI-Messenger-Fachdienstes* mehrere Matrix-Domains in einem gemeinsamen *Messenger-Service* betrieben, so muss die logische Trennung der Matrix-Domains sichergestellt werden. Die Art der Umsetzung bleibt dem Hersteller eines *TI-Messenger-Fachdienstes* überlassen. 
 
-TIP: Empfehlung der gematik ist eine Mandantentrennung über seperate *Messenger-Services*, die jeweils eine eigene Domain verwalten, zu realisieren.
+```admonish tip
+Empfehlung der gematik ist eine Mandantentrennung über seperate *Messenger-Services*, die jeweils eine eigene Domain verwalten, zu realisieren.
+```
 
 Eine mögliche Umsetzung wäre die Mandantentrennung über einen Matrix-Server zu realisieren, der mehrere Domains unterstützt. Diese Funktionalität wird aktuell von keinem Matrix-Server angeboten.  
 
-CAUTION: Bei einer logischen Mandantentrennung muss sichergestellt werden, dass die Prüfung der Föderationszugehörigkeit (Zuordnung SM\(C)-B zu Domain) sichergestellt ist und jeder mandantenübergreifende Zugriff verhindert wird.  
+```admonish caution
+Bei einer logischen Mandantentrennung muss sichergestellt werden, dass die Prüfung der Föderationszugehörigkeit (Zuordnung SM\(C)-B zu Domain) sichergestellt ist und jeder mandantenübergreifende Zugriff verhindert wird.  
+```
 
-== Matrix-Homeserver
+## Matrix-Homeserver
+
 Der *Matrix-Homeserver* ist die zentrale Komponente für die Kommunikation zwischen den Akteuren und stellt den *TI-M Clients* die in der Matrix Spezifikation definierten Endpunkte zur Verfügung. Der Matrix-Homeserver verwaltet die Akteure selbst oder bietet eine Schnittstelle für einen externen Identity Provider an, um das Authentifizierungsverfahren der Organisation nachnutzen zu können. 
 
-TIP: Als Referenz für einen Homeserver wird die link:https://github.com/element-hq/synapse[synapse Referenzimplementierung] empfohlen. 
+TIP: Als Referenz für einen Homeserver wird die [synapse Referenzimplementierung](https://github.com/element-hq/synapse) empfohlen. 
 
-=== Matrix-Version
+### Matrix-Version
+
 Der *Matrix-Homeserver* muss die 
 
 - Client-Server API
@@ -85,26 +82,36 @@ Der *Matrix-Homeserver* muss die
 
 in der Version 1.11 der Matrix-Spezifikation unterstützen.
 
-TIP: Von der gematik wurden Anpassungen an der 1.11 Spezifikation vorgenommen, die den Spezifikationen auf den link:https://gemspec.gematik.de/[gemspec Pages] der gematik zu entnehmen sind.
+```admonish tip
+Von der gematik wurden Anpassungen an der 1.11 Spezifikation vorgenommen, die den Spezifikationen auf den [gemspec Pages](https://gemspec.gematik.de/) der gematik zu entnehmen sind.
+```
 
-CAUTION: Die momentan in der Zulassung referenzierte Version 1.3 der Matrix-Spezifikation wird als `deprecated` gesetzt und ein zeitnaher Umstieg allen Zulassungsnehmern empfohlen.
+```admonish caution
+Die momentan in der Zulassung referenzierte Version 1.3 der Matrix-Spezifikation wird als `deprecated` gesetzt und ein zeitnaher Umstieg allen Zulassungsnehmern empfohlen.
+```
 
-= TI-M Pro Besonderheiten
-== Auflösen der IK-Nummer zu einer Domain
+# TI-M Pro Besonderheiten
+
+## Auflösen der IK-Nummer zu einer Domain
+
 Damit ein Akteur in der Rolle *User* den *TI-M Client Pro* nutzen kann, um die MXID mit Hilfe von vorliegenden Stammdaten (KVNR und IK-Nummer) zu generieren, ist es notwendig eine Schnittstelle zu schaffen, die Auskunft über die Domain liefert, auf der Versicherte mit einer bestimmten IK-Nummer ihren Account haben.
 
 Des Weiteren muss der *TI-M Client Pro* in der Lage sein zu bestimmen ob eine MXID zu einem TI-M ePA Fachdienst für Versicherte gehört damit das Berechtigungskonzept clientseitig durchgesetzt werden kann. Hierfür bedarf es einer Schnittstelle mittels welcher festgestellt werden kann ob ein Matrix Servername einen Versichertenserver darstellt.
 
 Um diese Auflösung zu ermöglichen wurde die API link:../../src/openapi/TiMessengerInformation.yaml[TiMessengerInformation] geschaffen. 
 
-= TI-M ePA Besonderheiten
-== Authentifizierungsverfahren
+# TI-M ePA Besonderheiten
+
+## Authentifizierungsverfahren
+
 Der *Messenger-Service* muss für die Authentifizierung der Akteure in der Rolle *Versicherter* an den *sektoralen IDP* angeschlossen werden. Hierfür ist es notwendig, dass der *TI-Messenger Service für ePA* für die Registrierung eines neuen Accounts und für das Login eines Akteurs in der Rolle *Versicherter* den *OIDC authorization code flow mit pushed authorization requests* am *sektoralen IDP* unterstützt.
 
-== Unterbindung der Versichertenkommunikation
+## Unterbindung der Versichertenkommunikation
+
 Ein *TI-M Messenger-Service ePA* soll verhindern, dass ein User in der Rolle *Versicherter* einen anderen *Versicherten* einladen kann. Die Prüfung der Einladung ist sowohl an der *Client-Server-API*, als auch an der *Server-Server-API* zu realisieren.
 
-== Ergänzungen/Einschränkungen zur Matrix Spezifikation
+## Ergänzungen/Einschränkungen zur Matrix Spezifikation
+
 - Der *Matrix-Homeserver* muss die Anlage öffentlicher Räume durch einen Akteur in der Rolle Versicherter unterbinden.
 - Der *TI-M Fachdienst ePA* muss Requests zu den Endpunkten für die Profilinformationen mit einer HTTP 403 Response ablehnen, sofern der anfragende Nutzer keine gemeinsamen Räume mit dem angefragten Nutzer hat.
 - Der *TI-M Fachdienst ePA* darf über die user directory search *KEINE* Profile von Nutzern ausliefern, die keine gemeinsamen Räume mit dem anfragenden Nutzer haben.
