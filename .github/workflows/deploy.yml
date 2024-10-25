@@ -43,7 +43,6 @@ jobs:
         run: |
           cd docs
           PATH=$PWD/../bin:$PATH mdbook build
-          tree .
 
       - name: Setup Pages
         id: pages
@@ -52,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/book/html
+          path: ./docs/book
 
   deploy:
     runs-on: ubuntu-latest
